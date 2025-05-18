@@ -2,5 +2,5 @@
   "initial_price": 100,
   "volatility": 0.05,
   "execution_probability": 0.5,
-  "simulation_steps": 1000000
+  "simulation_steps": 10000
 }
