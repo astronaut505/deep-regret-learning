@@ -68,6 +68,8 @@ class MarketMaker:
             return 0  # Not enough data to calculate Sharpe Ratio
         prices = [trade["price"] for trade in self.trades]
         returns = np.diff(prices)
+        if returns.std() == 0:  # Handle zero standard deviation
+            return 0
         return calculate_sharpe_ratio(returns)
 
     def simulate_trades(self, num_trades):
