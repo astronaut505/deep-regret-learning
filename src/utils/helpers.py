@@ -27,15 +27,13 @@ def simulate_trades(trade_arrival_rate, duration):
     trades = np.random.poisson(trade_arrival_rate, duration)
     return trades
 
-def calculate_pnl(prices, inventory):
+def calculate_pnl(prices, trade_sizes):
     """
-    Calculate Profit and Loss (PnL) based on prices and inventory levels.
-    :param prices: List or array of prices over time.
-    :param inventory: List or array of inventory levels over time.
-    :return: Total PnL.
+    Calculate P&L from executed trades.
+    :param prices: List of trade prices.
+    :param trade_sizes: List of trade sizes. Positive = buy, Negative = sell.
+    :return: Total P&L.
     """
-    if len(prices) != len(inventory):
-        raise ValueError("Prices and inventory arrays must have the same length.")
-    import numpy as np
-    pnl = np.dot(prices, inventory)
-    return pnl
+    prices = np.array(prices)
+    trade_sizes = np.array(trade_sizes)
+    return -np.sum(prices * trade_sizes)
