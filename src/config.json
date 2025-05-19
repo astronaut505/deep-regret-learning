@@ -3,5 +3,5 @@
   "volatility": 0.2,
   "risk_free_rate": 0.01,
   "execution_probability": 0.5,
-  "simulation_steps": 10000
+  "simulation_steps": 10001
 }
