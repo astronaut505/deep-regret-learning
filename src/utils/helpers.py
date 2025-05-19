@@ -34,6 +34,7 @@ def calculate_pnl(prices, trade_sizes):
     :param trade_sizes: List of trade sizes. Positive = buy, Negative = sell.
     :return: Total P&L.
     """
+    import numpy as np
     prices = np.array(prices)
     trade_sizes = np.array(trade_sizes)
     return -np.sum(prices * trade_sizes)
