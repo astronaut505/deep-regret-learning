@@ -44,11 +44,12 @@ class MarketMaker:
     def __init__(self, mid_price_model, trade_execution, risk_aversion=0.1, base_intensity=1.0, sensitivity=0.1):
         self.mid_price_model = mid_price_model
         self.trade_execution = trade_execution
-        self.inventory = 0  # Current inventory level
-        self.pnl = 0  # Profit and Loss
-        self.risk_aversion = risk_aversion  # Risk aversion parameter (κ)
-        self.base_intensity = base_intensity  # Base order arrival rate (A)
-        self.sensitivity = sensitivity  # Sensitivity to quote distance (k)
+        self.risk_aversion = risk_aversion
+        self.base_intensity = base_intensity
+        self.sensitivity = sensitivity
+        self.inventory = 0  # Initialize inventory
+        self.trades = []  # Initialize trades as an empty list
+        self.pnl = 0  # Initialize profit and loss
 
     def calculate_optimal_quotes(self, volatility):
         """
