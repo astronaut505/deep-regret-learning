@@ -117,11 +117,10 @@ class MarketMaker:
 
     def calculate_sharpe_ratio(self):
         if len(self.trades) < 2:
-            return 0  # Not enough data to calculate Sharpe Ratio
+            print("Warning: Not enough trades to calculate returns. Returning None.")
+            return None  # Fallback value for insufficient data
         prices = [trade["price"] for trade in self.trades]
         returns = np.diff(prices)
-        if returns.std() == 0:  # Handle zero standard deviation
-            return 0
         return calculate_sharpe_ratio(returns)
 
     def simulate_trades(self, num_trades):
@@ -143,20 +142,28 @@ class MarketMaker:
         inventory = [trade["size"] for trade in self.trades]
         pnl = calculate_pnl(prices, inventory)
         returns = np.diff(prices)  # Calculate returns for performance metrics
-        sharpe_ratio = calculate_sharpe_ratio(returns)
 
-        # Calculate Sortino ratio
-        downside_returns = [r for r in returns if r < 0]
-        if len(downside_returns) > 0:
-            sortino_ratio = np.mean(returns) / np.std(downside_returns)
+        if len(returns) == 0:
+            print("Warning: Returns array is empty. Skipping performance metrics.")
+            sharpe_ratio = None
+            sortino_ratio = None
+            max_drawdown = None
         else:
-            sortino_ratio = float('inf')
+            # Calculate Sharpe ratio
+            sharpe_ratio = calculate_sharpe_ratio(returns)
 
-        # Calculate maximum drawdown
-        cumulative_returns = np.cumsum(returns)
-        peak = np.maximum.accumulate(cumulative_returns)
-        drawdown = peak - cumulative_returns
-        max_drawdown = np.max(drawdown)
+            # Calculate Sortino ratio
+            downside_returns = [r for r in returns if r < 0]
+            if len(downside_returns) > 0:
+                sortino_ratio = np.mean(returns) / np.std(downside_returns)
+            else:
+                sortino_ratio = float('inf')
+
+            # Calculate maximum drawdown
+            cumulative_returns = np.cumsum(returns)
+            peak = np.maximum.accumulate(cumulative_returns)
+            drawdown = peak - cumulative_returns
+            max_drawdown = np.max(drawdown)
 
         print(f"Cumulative P&L: {pnl}, Sharpe Ratio: {sharpe_ratio}, Sortino Ratio: {sortino_ratio}, Maximum Drawdown: {max_drawdown}")
 

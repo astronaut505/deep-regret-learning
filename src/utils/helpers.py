@@ -1,6 +1,7 @@
 def calculate_sharpe_ratio(returns, risk_free_rate=0.0):
     if len(returns) == 0:
-        raise ValueError("Returns array cannot be empty.")
+        print("Warning: Returns array is empty. Returning None.")
+        return None  # Fallback value for empty returns
     if returns.std() == 0:
         raise ValueError("Standard deviation of returns cannot be zero.")
     excess_returns = returns - risk_free_rate
