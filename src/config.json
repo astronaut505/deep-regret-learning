@@ -1,6 +1,7 @@
 {
   "initial_price": 100,
-  "volatility": 0.35,
+  "volatility": 0.2,
+  "risk_free_rate": 0.01,
   "execution_probability": 0.5,
   "simulation_steps": 10000
 }

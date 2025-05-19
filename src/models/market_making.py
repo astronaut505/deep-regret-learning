@@ -1,26 +1,26 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from src.utils.helpers import calculate_pnl, calculate_sharpe_ratio
 
 
 class MidPriceModel:
-    def __init__(self, initial_price, volatility, model_type="ABM"):
+    def __init__(self, initial_price, volatility, risk_free_rate, model_type="GBM"):
         self.price = initial_price
         self.volatility = volatility
-        self.model_type = model_type  # "ABM" or "GBM"
+        self.risk_free_rate = risk_free_rate
+        self.model_type = model_type  # Only "GBM" is supported now
 
     def simulate_price_dynamics(self, time_step):
         if time_step <= 0:
             raise ValueError("Time step must be positive.")
 
-        drift = 0  # Assuming no drift for simplicity
+        drift = (self.risk_free_rate - 0.5 * self.volatility**2) * time_step
         shock = self.volatility * np.sqrt(time_step) * np.random.normal()
 
-        if self.model_type == "ABM":
-            self.price += drift + shock
-        elif self.model_type == "GBM":
+        if self.model_type == "GBM":
             self.price *= np.exp(drift + shock)
         else:
-            raise ValueError("Invalid model type. Choose 'ABM' or 'GBM'.")
+            raise ValueError("Unsupported model type. Only 'GBM' is supported.")
 
         return self.price
 
@@ -41,26 +41,52 @@ class TradeExecution:
 
 
 class MarketMaker:
-    def __init__(self, mid_price_model, trade_execution):
+    def __init__(self, mid_price_model, trade_execution, risk_aversion=0.1, base_intensity=1.0, sensitivity=0.1):
         self.mid_price_model = mid_price_model
         self.trade_execution = trade_execution
-        self.inventory = 0
-        self.trades = []
-        self.pnl = 0
+        self.inventory = 0  # Current inventory level
+        self.pnl = 0  # Profit and Loss
+        self.risk_aversion = risk_aversion  # Risk aversion parameter (κ)
+        self.base_intensity = base_intensity  # Base order arrival rate (A)
+        self.sensitivity = sensitivity  # Sensitivity to quote distance (k)
+
+    def calculate_optimal_quotes(self, volatility):
+        """
+        Calculate the optimal bid and ask distances based on the Avellaneda-Stoikov model.
+        :param volatility: Current market volatility.
+        :return: Optimal bid and ask distances (δ_b, δ_a).
+        """
+        half_spread = self.risk_aversion * volatility**2 / (2 * self.base_intensity)
+        inventory_adjustment = self.inventory * self.risk_aversion * volatility
+
+        delta_b = half_spread - inventory_adjustment
+        delta_a = half_spread + inventory_adjustment
+
+        return delta_b, delta_a
 
     def run_simulation(self, steps):
+        """
+        Simulate the market-making process over a given number of steps.
+        :param steps: Number of simulation steps.
+        """
         try:
             for step in range(steps):
-                # Simulate price dynamics
-                self.mid_price_model.simulate_price_dynamics(1)
+                # Simulate mid-price dynamics
+                mid_price = self.mid_price_model.simulate_price_dynamics(time_step=1)
 
-                # Optimize quotes with inventory and volatility
-                quotes = self.optimize_quotes(self.inventory, self.mid_price_model.volatility)
-                print(f"Step {step + 1}/{steps}: Bid = {quotes[0]}, Ask = {quotes[1]}")
+                # Calculate optimal quotes
+                delta_b, delta_a = self.calculate_optimal_quotes(self.mid_price_model.volatility)
+                bid_price = mid_price - delta_b
+                ask_price = mid_price + delta_a
 
-                # Simulate trades
-                self.simulate_trades(1)
-                print(f"Inventory after step {step + 1}: {self.inventory}")
+                # Simulate trade arrivals
+                if self.trade_execution.calculate_execution_intensity(delta_b) > np.random.uniform():
+                    self.inventory += 1  # Buy at bid
+                    self.pnl -= bid_price
+
+                if self.trade_execution.calculate_execution_intensity(delta_a) > np.random.uniform():
+                    self.inventory -= 1  # Sell at ask
+                    self.pnl += ask_price
 
             # Log performance metrics
             self.log_performance()
@@ -230,3 +256,36 @@ class MarketMaker:
             print(f"Scenario: {scenario}, Metrics: {metrics}")
 
         return results
+
+    def plot_mid_price(self, mid_prices):
+        plt.figure(figsize=(10, 5))
+        plt.plot(mid_prices, label='Mid-Price')
+        plt.title('Mid-Price Dynamics')
+        plt.xlabel('Time Steps')
+        plt.ylabel('Price')
+        plt.legend()
+        plt.grid()
+        plt.savefig('mid_price_dynamics.png')
+        plt.show()
+
+    def plot_inventory(self, inventory):
+        plt.figure(figsize=(10, 5))
+        plt.plot(inventory, label='Inventory')
+        plt.title('Inventory Evolution')
+        plt.xlabel('Time Steps')
+        plt.ylabel('Inventory Level')
+        plt.legend()
+        plt.grid()
+        plt.savefig('inventory_evolution.png')
+        plt.show()
+
+    def plot_pnl(self, pnl):
+        plt.figure(figsize=(10, 5))
+        plt.plot(pnl, label='Cumulative PnL')
+        plt.title('Profit and Loss (PnL) Over Time')
+        plt.xlabel('Time Steps')
+        plt.ylabel('PnL')
+        plt.legend()
+        plt.grid()
+        plt.savefig('pnl_over_time.png')
+        plt.show()

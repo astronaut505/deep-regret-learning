@@ -48,7 +48,11 @@ def main():
             config = json.load(config_file)
 
         # Initialize components
-        mid_price_model = MidPriceModel(config["initial_price"], config["volatility"])
+        mid_price_model = MidPriceModel(
+            config["initial_price"],
+            config["volatility"],
+            config["risk_free_rate"]
+        )
         trade_execution = TradeExecution(config["execution_probability"])
         market_maker = MarketMaker(mid_price_model, trade_execution)
 
